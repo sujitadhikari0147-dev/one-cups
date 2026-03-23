@@ -59,7 +59,7 @@ const drinks = {
   }},
   "Whitney's Kiss": { category:{
     "Calypso Strawberry": {type:"Juice", qty:1},
-    "New Amsterdam Vodka Pink Whitney 50ml": {type:"Shooter", qty:2},
+    "New Amsterdam Vodka Pink Whitney 50ml": {type:"Shooter", qty:2}, // fixed qty
     "Starburst": {type:"Candy", qty:2}
   }},
   "Malibu Mr. Breeze": { category:{
@@ -75,20 +75,20 @@ const drinks = {
   }},
   "Boozy Baja Blast": { category:{
     "Mtn Dew Baja Blast": {type:"Juice", qty:1},
-    "Big Sipz Lime Margarita": {type:"Juice", qty:1},
-    "Beatbox Blue Razzberry": {type:"Juice", qty:1},
+    "Big Sipz Lime Margarita": {type:"Pre-Made Cocktails", qty:1},
+    "Beatbox Blue Razzberry": {type:"Pre-Made Cocktails", qty:1},
     "Malibu Coconut 50ml": {type:"Shooter", qty:1},
     "Svedka Cherry Limade 50ml": {type:"Shooter", qty:1},
     "Blue sour patch": {type:"Candy", qty:1}
   }},
   "Purple Punch": { category:{
-    "Big Sipz Purple Punch": {type:"Juice", qty:1},
+    "Big Sipz Purple Punch": {type:"Pre-Made Cocktails", qty:1},
     "Tito's Vodka 50ml": {type:"Shooter", qty:1},
     "Ocean Spray Cran Grape Juice": {type:"Juice", qty:1},
     "Grape Jolly Ranchers": {type:"Candy", qty:1}
   }},
   "Tropical Temptation": { category:{
-    "Big Sipz Lime Margarita": {type:"Juice", qty:1},
+    "Big Sipz Lime Margarita": {type:"Pre-Made Cocktails", qty:1},
     "Patron Silver Tequila 50ml": {type:"Shooter", qty:1},
     "Green sour patch": {type:"Candy", qty:1}
   }},
@@ -117,8 +117,8 @@ const drinks = {
   }},
   "Julio's Paradise": { category:{
     "Don Julio Tequila Reposado 50ml": {type:"Shooter", qty:1},
-    "Beatbox Pink Lemonade": {type:"Juice", qty:1},
-    "Calypso Paradise Punch": {type:"Juice", qty:1},
+    "Beatbox Pink Lemonade": {type:"Pre-Made Cocktails", qty:1},
+    "Calypso Paradise Punch": {type:"Pre-Made Cocktails", qty:1},
     "New Amsterdam Vodka Pink Whitney 50ml": {type:"Shooter", qty:1},
     "Cherry Jolly Rancher": {type:"Candy", qty:2}
   }},
@@ -136,38 +136,38 @@ const drinks = {
     "PicaFresa": {type:"Candy", qty:1}
   }},
   "Lit Pink Fish": { category:{
-    "Buzzballz Tequila rita 200ml": {type:"Shooter", qty:1},
+    "Buzzballz Tequila rita 200ml": {type:"Pre-Made Cocktails", qty:1},
     "1800 Blanco tequila 50ml": {type:"Shooter", qty:2},
     "Redbull 12z White peach": {type:"Juice", qty:1},
     "Swedish Fish": {type:"Candy", qty:2}
   }},
   "PB&J Gone Wild": { category:{
-    "Big Sipz Purple Punch": {type:"Juice", qty:1},
+    "Big Sipz Purple Punch": {type:"Pre-Made Cocktails", qty:1},
     "Skrewball 50ml": {type:"Shooter", qty:2},
     "Ocean Spray Cran Grape Juice": {type:"Juice", qty:1},
     "Grape Jolly ranchers": {type:"Candy", qty:2}
   }},
   "BBC triple Threat": { category:{
-    "Buzzballz Chillers berry cherry limeade": {type:"Juice", qty:1},
-    "CW Lime Margarita": {type:"Juice", qty:1},
-    "Beatbox Blueberry Lemonade": {type:"Juice", qty:1},
+    "Buzzballz Chillers berry cherry limeade": {type:"Pre-Made Cocktails", qty:1},
+    "CW Lime Margarita": {type:"Pre-Made Cocktails", qty:1},
+    "Beatbox Blueberry Lemonade": {type:"Pre-Made Cocktails", qty:1},
     "Swedish Fish": {type:"Candy", qty:2}
   }},
   "Elf on fire": { category:{
     "Fireball 50ml": {type:"Shooter", qty:2},
-    "Buzzballz Maple Syrup Sundae": {type:"Shooter", qty:1},
+    "Buzzballz Maple Syrup Sundae": {type:"Pre-Made Cocktails", qty:1},
     "Starbucks Frappuchino Mocha": {type:"Juice", qty:1}
   }},
   "Midnight Pink": { category:{
-    "Buzzaballz Pink Lemonsqueezy": {type:"Shooter", qty:1},
-    "Beatbox Mango Punch": {type:"Juice", qty:1},
+    "Buzzaballz Pink Lemonsqueezy": {type:"Pre-Made Cocktails", qty:1},
+    "Beatbox Mango Punch": {type:"Pre-Made Cocktails", qty:1},
     "New Amsterdam Vodka Pink Whitney 50ml": {type:"Shooter", qty:1},
     "Kinky Peach Mango 50ml": {type:"Shooter", qty:1},
     "Swedish Fish": {type:"Candy", qty:2}
   }}
 };
 
-// Autocomplete & main logic (unchanged except corrected calculation)
+// --- Autocomplete & main logic ---
 const input = document.getElementById("drink-input");
 const selectedDrinksList = document.getElementById("selected-drinks");
 const ingredientTotalsDiv = document.getElementById("ingredient-totals");
@@ -248,11 +248,12 @@ function deleteDrink(index){
 }
 
 function calculate(){
-  const totals = {Juice:{},Shooter:{},Candy:{}};
+  const totals = {};
   selectedDrinks.forEach(d=>{
     const recipe = drinks[d.name].category;
     for(let ing in recipe){
       const cat = recipe[ing].type;
+      if(!totals[cat]) totals[cat] = {};
       const ingQty = recipe[ing].qty;
       totals[cat][ing] = (totals[cat][ing] || 0) + ingQty * d.qty;
     }
