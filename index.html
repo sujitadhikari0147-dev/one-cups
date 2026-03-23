@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>One Cup Pro Inventory</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; margin:0; background:#f1f2f6; color:#2f3640; }
+    header { background:#273c75; color:#fff; padding:20px; text-align:center; }
+    h1 { margin:0; font-size:1.8em; }
+    .container { max-width:900px; margin:20px auto; padding:20px; background:#fff; border-radius:10px; box-shadow:0 5px 15px rgba(0,0,0,0.1); }
+    .autocomplete { position:relative; display:block; width:100%; margin-bottom:20px; }
+    input { width:100%; padding:10px; box-sizing:border-box; border-radius:5px; border:1px solid #ccc; }
+    .autocomplete-items { position:absolute; border:1px solid #d4d4d4; border-top:none; z-index:99; top:100%; left:0; right:0; background:#fff; max-height:200px; overflow-y:auto; border-radius:0 0 5px 5px; }
+    .autocomplete-items div { padding:10px; cursor:pointer; border-bottom:1px solid #d4d4d4; }
+    .autocomplete-items div:hover { background-color:#f1f2f6; }
+    .selected-drinks { margin-bottom:20px; }
+    .selected-drinks li { margin:5px 0; display:flex; justify-content:space-between; align-items:center; background:#dcdde1; padding:8px 12px; border-radius:5px; }
+    .selected-drinks button { margin-left:5px; padding:4px 8px; border:none; border-radius:4px; cursor:pointer; }
+    .btn-edit { background:#44bd32; color:#fff; }
+    .btn-delete { background:#e84118; color:#fff; }
+    button.calculate, button.clear { padding:10px 15px; margin-right:10px; border:none; border-radius:5px; cursor:pointer; color:#fff; }
+    button.calculate { background:#0097e6; }
+    button.clear { background:#7f8fa6; }
+    table { width:100%; border-collapse:collapse; margin-top:20px; }
+    th, td { padding:10px; text-align:left; border-bottom:1px solid #dcdde1; }
+    th { background:#f5f6fa; }
+    h2 { margin-top:30px; border-bottom:2px solid #dcdde1; padding-bottom:5px; }
+  </style>
+</head>
+<body>
+<header><h1>One Cup Pro Inventory</h1></header>
+
+<div class="container">
+  <div class="autocomplete">
+    <input id="drink-input" type="text" placeholder="Type drink name...">
+  </div>
+
+  <ul class="selected-drinks" id="selected-drinks"></ul>
+
+  <button class="calculate" onclick="calculate()">Calculate Ingredients</button>
+  <button class="clear" onclick="clearAll()">Clear</button>
+
+  <div id="ingredient-totals"></div>
+</div>
+
+<script>
+const drinks = {
+  "Exotic Ecstasy": { category:{
+    "Hennessy 50ml": {type:"Shooter", qty:1},
+    "Kinky Peach Mango 50ml": {type:"Shooter", qty:1},
+    "Hpnotic 50ml": {type:"Shooter", qty:1},
+    "Dole Pineapple Juice": {type:"Juice", qty:1},
+    "Pink Sour Patch": {type:"Candy", qty:1}
+  }},
+  "Hennyponic": { category:{
+    "Hennessy 50ml": {type:"Shooter", qty:1},
+    "Hpnotic 50ml": {type:"Shooter", qty:1},
+    "Ocean Spray Cranberry Juice": {type:"Juice", qty:1}
+  }},
+  "Whitney's Kiss": { category:{
+    "Calypso Strawberry": {type:"Juice", qty:1},
+    "New Amsterdam Vodka Pink Whitney 50ml": {type:"Shooter", qty:1},
+    "Starburst": {type:"Candy", qty:2}
+  }},
+  "Malibu Mr. Breeze": { category:{
+    "Malibu Coconut 50ml": {type:"Shooter", qty:1},
+    "Ocean Spray Cran Apple Juice": {type:"Juice", qty:1},
+    "Dole Pineapple Juice": {type:"Juice", qty:1},
+    "99 Brand Pineapple 50ml": {type:"Shooter", qty:1}
+  }},
+  "Peachy Sunset Seduction": { category:{
+    "Crown Royal Peach 50ml": {type:"Shooter", qty:1},
+    "Dole Pineapple Juice": {type:"Juice", qty:1},
+    "Minute Maid Orange": {type:"Juice", qty:1}
+  }},
+  "Boozy Baja Blast": { category:{
+    "Mtn Dew Baja Blast": {type:"Juice", qty:1},
+    "Big Sipz Lime Margarita": {type:"Juice", qty:1},
+    "Beatbox Blue Razzberry": {type:"Juice", qty:1},
+    "Malibu Coconut 50ml": {type:"Shooter", qty:1},
+    "Svedka Cherry Limade 50ml": {type:"Shooter", qty:1},
+    "Blue sour patch": {type:"Candy", qty:1}
+  }},
+  "Purple Punch": { category:{
+    "Big Sipz Purple Punch": {type:"Juice", qty:1},
+    "Tito's Vodka 50ml": {type:"Shooter", qty:1},
+    "Ocean Spray Cran Grape Juice": {type:"Juice", qty:1},
+    "Grape Jolly Ranchers": {type:"Candy", qty:1}
+  }},
+  "Tropical Temptation": { category:{
+    "Big Sipz Lime Margarita": {type:"Juice", qty:1},
+    "Patron Silver Tequila 50ml": {type:"Shooter", qty:1},
+    "Green sour patch": {type:"Candy", qty:1}
+  }},
+  "Slurp Juice": { category:{
+    "Hpnotic 50ml": {type:"Shooter", qty:1},
+    "Kinky Blue 50ml": {type:"Shooter", qty:2},
+    "Calypso Ocean Blue": {type:"Juice", qty:1},
+    "Blue sour patch": {type:"Candy", qty:1}
+  }},
+  "Cinnamon Toast Crunch": { category:{
+    "Fireball 50ml": {type:"Shooter", qty:2},
+    "Rumchata 50ml": {type:"Shooter", qty:2}
+  }},
+  "PineMango Fusion": { category:{
+    "99 brand Mango 50ml": {type:"Shooter", qty:2},
+    "Svedka Mango Pineapple 50ml": {type:"Shooter", qty:2},
+    "Dole Pineapple Juice": {type:"Juice", qty:1},
+    "Vero Mango lollipop": {type:"Candy", qty:1}
+  }},
+  "Devil's Apple Mule": { category:{
+    "Jose Cuervo Devils Reserve 50ml": {type:"Shooter", qty:2},
+    "Ginger Beer": {type:"Juice", qty:1},
+    "Lemon Packet": {type:"Juice", qty:1},
+    "PicaFresa": {type:"Candy", qty:2},
+    "99 Brand Apple 50ml": {type:"Shooter", qty:1}
+  }},
+  "Julio's Paradise": { category:{
+    "Don Julio Tequila Reposado 50ml": {type:"Shooter", qty:1},
+    "Beatbox Pink Lemonade": {type:"Juice", qty:1},
+    "Calypso Paradise Punch": {type:"Juice", qty:1},
+    "New Amsterdam Vodka Pink Whitney 50ml": {type:"Shooter", qty:1},
+    "Cherry Jolly Rancher": {type:"Candy", qty:2}
+  }},
+  "Espresso Martini Bomb": { category:{
+    "Starbucks Espresso and cream": {type:"Juice", qty:1},
+    "Tito's Vodka 50ml": {type:"Shooter", qty:1},
+    "Kahlua 50ml": {type:"Shooter", qty:1},
+    "99 Brand Xxpresso Coffee 50ml": {type:"Shooter", qty:1}
+  }},
+  "Dirty Paloma": { category:{
+    "Squirt": {type:"Juice", qty:1},
+    "Lunazul tequila reposado 50ml": {type:"Shooter", qty:1},
+    "Kinky Peach Mango 50ml": {type:"Shooter", qty:1},
+    "99 Brand Strawberries 50ml": {type:"Shooter", qty:1},
+    "PicaFresa": {type:"Candy", qty:1}
+  }},
+  "Lit Pink Fish": { category:{
+    "Buzzballz Tequila rita 200ml": {type:"Shooter", qty:1},
+    "1800 Blanco tequila 50ml": {type:"Shooter", qty:2},
+    "Redbull 12z White peach": {type:"Juice", qty:1},
+    "Swedish Fish": {type:"Candy", qty:2}
+  }},
+  "PB&J Gone Wild": { category:{
+    "Big Sipz Purple Punch": {type:"Juice", qty:1},
+    "Skrewball 50ml": {type:"Shooter", qty:2},
+    "Ocean Spray Cran Grape Juice": {type:"Juice", qty:1},
+    "Grape Jolly ranchers": {type:"Candy", qty:2}
+  }},
+  "BBC triple Threat": { category:{
+    "Buzzballz Chillers berry cherry limeade": {type:"Juice", qty:1},
+    "CW Lime Margarita": {type:"Juice", qty:1},
+    "Beatbox Blueberry Lemonade": {type:"Juice", qty:1},
+    "Swedish Fish": {type:"Candy", qty:2}
+  }},
+  "Elf on fire": { category:{
+    "Fireball 50ml": {type:"Shooter", qty:2},
+    "Buzzballz Maple Syrup Sundae": {type:"Shooter", qty:1},
+    "Starbucks Frappuchino Mocha": {type:"Juice", qty:1}
+  }},
+  "Midnight Pink": { category:{
+    "Buzzaballz Pink Lemonsqueezy": {type:"Shooter", qty:1},
+    "Beatbox Mango Punch": {type:"Juice", qty:1},
+    "New Amsterdam Vodka Pink Whitney 50ml": {type:"Shooter", qty:1},
+    "Kinky Peach Mango 50ml": {type:"Shooter", qty:1},
+    "Swedish Fish": {type:"Candy", qty:2}
+  }}
+};
+
+// Autocomplete & main logic (unchanged except corrected calculation)
+const input = document.getElementById("drink-input");
+const selectedDrinksList = document.getElementById("selected-drinks");
+const ingredientTotalsDiv = document.getElementById("ingredient-totals");
+const selectedDrinks = [];
+
+function autocomplete(inp, arr) {
+  let currentFocus;
+  inp.addEventListener("input", function() {
+    let val = this.value;
+    closeAllLists();
+    if(!val) return false;
+    currentFocus = -1;
+
+    const listDiv = document.createElement("DIV");
+    listDiv.setAttribute("id", this.id + "autocomplete-list");
+    listDiv.setAttribute("class","autocomplete-items");
+    this.parentNode.appendChild(listDiv);
+
+    for(let i=0;i<arr.length;i++){
+      if(arr[i].toLowerCase().includes(val.toLowerCase())){
+        const itemDiv = document.createElement("DIV");
+        itemDiv.innerHTML = "<strong>" + arr[i].substr(0,val.length) + "</strong>" + arr[i].substr(val.length);
+        itemDiv.addEventListener("click", function(){
+          let qty = prompt("Enter quantity:","1");
+          qty = parseInt(qty) || 1;
+          addSelectedDrink(arr[i],qty);
+          inp.value="";
+          closeAllLists();
+        });
+        listDiv.appendChild(itemDiv);
+      }
+    }
+  });
+
+  inp.addEventListener("keydown", function(e){
+    let x = document.getElementById(this.id + "autocomplete-list");
+    if(x) x = x.getElementsByTagName("div");
+    if(e.keyCode==40){currentFocus++;addActive(x);}
+    else if(e.keyCode==38){currentFocus--;addActive(x);}
+    else if(e.keyCode==13){e.preventDefault(); if(currentFocus>-1){ if(x) x[currentFocus].click(); }}
+  });
+
+  function addActive(x){ if(!x) return false; removeActive(x); if(currentFocus>=x.length) currentFocus=0; if(currentFocus<0) currentFocus=x.length-1; x[currentFocus].classList.add("autocomplete-active"); }
+  function removeActive(x){ for(let i=0;i<x.length;i++) x[i].classList.remove("autocomplete-active"); }
+  function closeAllLists(elmnt){ const x=document.getElementsByClassName("autocomplete-items"); for(let i=0;i<x.length;i++){ if(elmnt!=x[i] && elmnt!=inp) x[i].parentNode.removeChild(x[i]); }}
+  document.addEventListener("click", function(e){ closeAllLists(e.target); });
+}
+
+function addSelectedDrink(name, qty){
+  const existingIndex = selectedDrinks.findIndex(d => d.name === name);
+  if(existingIndex > -1){ selectedDrinks[existingIndex].qty += qty; }
+  else{ selectedDrinks.push({name, qty}); }
+  renderSelectedDrinks();
+}
+
+function renderSelectedDrinks(){
+  selectedDrinksList.innerHTML="";
+  selectedDrinks.forEach((d,i)=>{
+    const li = document.createElement("li");
+    li.innerHTML = `${d.name} - ${d.qty} <span>
+      <button class="btn-edit" onclick="editDrink(${i})">Edit</button>
+      <button class="btn-delete" onclick="deleteDrink(${i})">Delete</button>
+    </span>`;
+    selectedDrinksList.appendChild(li);
+  });
+}
+
+function editDrink(index){
+  let newQty = prompt("Edit quantity:",selectedDrinks[index].qty);
+  newQty = parseInt(newQty) || selectedDrinks[index].qty;
+  selectedDrinks[index].qty = newQty;
+  renderSelectedDrinks();
+}
+
+function deleteDrink(index){
+  selectedDrinks.splice(index,1);
+  renderSelectedDrinks();
+}
+
+function calculate(){
+  const totals = {Juice:{},Shooter:{},Candy:{}};
+  selectedDrinks.forEach(d=>{
+    const recipe = drinks[d.name].category;
+    for(let ing in recipe){
+      const cat = recipe[ing].type;
+      const ingQty = recipe[ing].qty;
+      totals[cat][ing] = (totals[cat][ing] || 0) + ingQty * d.qty;
+    }
+  });
+
+  ingredientTotalsDiv.innerHTML="";
+  for(let cat in totals){
+    const catData = totals[cat];
+    if(Object.keys(catData).length>0){
+      const h2 = document.createElement("h2"); h2.textContent = cat; ingredientTotalsDiv.appendChild(h2);
+      const table = document.createElement("table");
+      const tbody = document.createElement("tbody");
+      for(let ing in catData){
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${ing}</td><td>${catData[ing]}</td>`;
+        tbody.appendChild(row);
+      }
+      table.appendChild(tbody);
+      ingredientTotalsDiv.appendChild(table);
+    }
+  }
+}
+
+function clearAll(){
+  selectedDrinks.length=0;
+  selectedDrinksList.innerHTML="";
+  ingredientTotalsDiv.innerHTML="";
+  input.value="";
+}
+
+autocomplete(input,Object.keys(drinks));
+</script>
+</body>
+</html>
